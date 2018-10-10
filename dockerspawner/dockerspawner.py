@@ -623,8 +623,10 @@ class DockerSpawner(Spawner):
 
         if not self.use_internal_ip:
             host_config["port_bindings"] = {self.port: (self.host_ip,)}
+        host_config["security_opt"] = ["no-new-privileges:true"]
         host_config.update(self.extra_host_config)
         host_config.setdefault("network_mode", self.network_name)
+        host_config["mem_limit"] = "512m"
 
         self.log.debug("Starting host with config: %s", host_config)
 
