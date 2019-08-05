@@ -3,6 +3,7 @@ A Spawner for JupyterHub that runs each user's server in a separate docker conta
 """
 
 from concurrent.futures import ThreadPoolExecutor
+import logging
 import os
 from pprint import pformat
 import string
@@ -21,6 +22,7 @@ from traitlets import Dict, Unicode, Bool, Int, Any, default, observe
 
 from .volumenamingstrategy import default_format_volume_name
 
+from jupyterhub_course_config import coursemapping
 
 class UnicodeOrFalse(Unicode):
     info_text = "a unicode string or False"
@@ -35,6 +37,14 @@ class UnicodeOrFalse(Unicode):
 import jupyterhub
 
 _jupyterhub_xy = "%i.%i" % (jupyterhub.version_info[:2])
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+f_handler = logging.FileHandler('jupyterhub_user.log')
+f_handler.setLevel(logging.DEBUG)
+f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+f_handler.setFormatter(f_format)
+logger.addHandler(f_handler)
 
 
 class DockerSpawner(Spawner):
@@ -643,6 +653,7 @@ class DockerSpawner(Spawner):
 
         e.g. calling `docker start`
         """
+        logger.info('Starting container (%s). Course: %s; User: %s', self.container_id, self.get_env()['COURSE'], self.user.name)
         return self.docker("start", self.container_id)
 
     @gen.coroutine
@@ -675,10 +686,18 @@ class DockerSpawner(Spawner):
             )
             self.extra_host_config.update(extra_host_config)
 
-        image = self.image
+        course = self.get_env()['COURSE']
+        if course in coursemapping:
+            self.image = coursemapping[course]['image']
+            self.volumes = coursemapping[course]['volumes']
+            self.default_url = coursemapping[course]['default_url']
+        else:
+            self.image = coursemapping['default']['image']
+            self.volumes = coursemapping['default']['volumes']
+            self.default_url = coursemapping['default']['default_url']
 
         obj = yield self.get_object()
-        if obj and self.remove:
+        if obj:
             self.log.warning(
                 "Removing %s that should have been cleaned up: %s (id: %s)",
                 self.object_type,
@@ -792,6 +811,7 @@ class DockerSpawner(Spawner):
 
         Consider using pause/unpause when docker-py adds support
         """
+        logger.info('Stopping container (%s). Course: %s; User: %s', self.container_id, self.get_env()['COURSE'], self.user.name)
         self.log.info(
             "Stopping %s %s (id: %s)", self.object_type, self.object_name, self.object_id[:7]
         )
