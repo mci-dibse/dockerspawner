@@ -689,11 +689,10 @@ class DockerSpawner(Spawner):
         course = self.get_env().get('COURSE')
         if course in coursemapping:
             self.image = coursemapping[course]['image']
-            self.volumes = coursemapping[course]['volumes']
+            self.volumes.update(coursemapping[course]['volumes'])
             self.default_url = coursemapping[course]['default_url']
         else:
             self.image = coursemapping['default']['image']
-            self.volumes = coursemapping['default']['volumes']
             self.default_url = coursemapping['default']['default_url']
 
         obj = yield self.get_object()
