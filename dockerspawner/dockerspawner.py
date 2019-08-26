@@ -653,7 +653,7 @@ class DockerSpawner(Spawner):
 
         e.g. calling `docker start`
         """
-        logger.info('Starting container (%s). Course: %s; User: %s', self.container_id, self.get_env()['COURSE'], self.user.name)
+        logger.info('Starting container (%s). Course: %s; User: %s', self.container_id, self.get_env().get('COURSE'), self.user.name)
         return self.docker("start", self.container_id)
 
     @gen.coroutine
@@ -686,7 +686,7 @@ class DockerSpawner(Spawner):
             )
             self.extra_host_config.update(extra_host_config)
 
-        course = self.get_env()['COURSE']
+        course = self.get_env().get('COURSE')
         if course in coursemapping:
             self.image = coursemapping[course]['image']
             self.volumes = coursemapping[course]['volumes']
