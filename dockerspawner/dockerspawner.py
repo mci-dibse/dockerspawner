@@ -40,7 +40,7 @@ _jupyterhub_xy = "%i.%i" % (jupyterhub.version_info[:2])
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-f_handler = logging.FileHandler('jupyterhub_user.log')
+f_handler = logging.FileHandler('/var/log/jupyterhub/user.log')
 f_handler.setLevel(logging.DEBUG)
 f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 f_handler.setFormatter(f_format)
