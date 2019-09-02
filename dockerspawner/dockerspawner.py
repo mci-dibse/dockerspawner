@@ -35,6 +35,7 @@ from traitlets import (
 
 from .volumenamingstrategy import default_format_volume_name
 
+from jupyterhub_course_config import coursemapping
 
 class UnicodeOrFalse(Unicode):
     info_text = "a unicode string or False"
@@ -859,6 +860,8 @@ class DockerSpawner(Spawner):
         # build the dictionary of keyword arguments for host_config
         host_config = dict(binds=self.volume_binds, links=self.links)
 
+        host_config["mem_limit"] = "512m"
+
         if getattr(self, "mem_limit", None) is not None:
             # If jupyterhub version > 0.7, mem_limit is a traitlet that can
             # be directly configured. If so, use it to set mem_limit.
@@ -867,6 +870,7 @@ class DockerSpawner(Spawner):
 
         if not self.use_internal_ip:
             host_config["port_bindings"] = {self.port: (self.host_ip,)}
+        host_config["security_opt"] = ["no-new-privileges:true"]
         host_config.update(self.extra_host_config)
         host_config.setdefault("network_mode", self.network_name)
 
@@ -964,11 +968,19 @@ class DockerSpawner(Spawner):
             # save choice in self.image
             self.image = yield self.check_image_whitelist(image_option)
 
-        image = self.image
+        course = self.get_env().get('COURSE')
+        if course in coursemapping:
+            self.image = coursemapping[course]['image']
+            self.volumes.update(coursemapping[course]['volumes'])
+            self.default_url = coursemapping[course]['default_url']
+        else:
+            self.image = coursemapping['default']['image']
+            self.default_url = coursemapping['default']['default_url']
+            
         yield self.pull_image(image)
 
         obj = yield self.get_object()
-        if obj and self.remove:
+        if obj:
             self.log.warning(
                 "Removing %s that should have been cleaned up: %s (id: %s)",
                 self.object_type,
