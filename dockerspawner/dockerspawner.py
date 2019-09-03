@@ -22,8 +22,6 @@ from traitlets import Dict, Unicode, Bool, Int, Any, default, observe
 
 from .volumenamingstrategy import default_format_volume_name
 
-from jupyterhub_course_config import coursemapping
-
 class UnicodeOrFalse(Unicode):
     info_text = "a unicode string or False"
 
@@ -419,6 +417,16 @@ class DockerSpawner(Spawner):
             """
         ),
     )
+        
+    coursemapping = Dict(
+        {
+            "default": {
+                "image": "jupyterhub/singleuser", 
+                "default_url": "/tree"
+            }
+        },
+        config=True,
+    )
 
     @property
     def tls_client(self):
@@ -687,13 +695,13 @@ class DockerSpawner(Spawner):
             self.extra_host_config.update(extra_host_config)
 
         course = self.get_env().get('COURSE')
-        if course in coursemapping:
-            self.image = coursemapping[course]['image']
-            self.volumes.update(coursemapping[course]['volumes'])
-            self.default_url = coursemapping[course]['default_url']
+        if course in self.coursemapping:
+            self.image = self.coursemapping[course]['image']
+            self.volumes.update(self.coursemapping[course]['volumes'])
+            self.default_url = self.coursemapping[course]['default_url']
         else:
-            self.image = coursemapping['default']['image']
-            self.default_url = coursemapping['default']['default_url']
+            self.image = self.coursemapping['default']['image']
+            self.default_url = self.coursemapping['default']['default_url']
 
         obj = yield self.get_object()
         if obj:
